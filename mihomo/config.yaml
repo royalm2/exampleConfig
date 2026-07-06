@@ -1,0 +1,334 @@
+rule-anchor:
+  ip: &ip { type: http, proxy: Update, interval: 86400, behavior: ipcidr, format: text }
+  domain: &domain { type: http, proxy: Update, interval: 86400, behavior: domain, format: text }
+  domain_yaml: &domain_yaml { type: http, proxy: Update, interval: 86400, behavior: domain, format: yaml }
+  domain_local: &domain_local { type: file, behavior: domain, format: text }
+  pp: &pp { type: http, proxy: Update, interval: 86400, health-check: { enable: true, url: "https://cp.cloudflare.com/generate_204", interval: 86400 } }
+
+proxy-providers:
+  bilibili:
+    <<: *pp
+    url: "https://bilibili.com"
+    path: ./ProxyProviders/bilibili.yaml
+    override:
+      additional-prefix: "bilibili/"
+      tfo: false
+      udp: true
+
+ipv6: true
+allow-lan: true
+mixed-port: 10010
+unified-delay: true
+tcp-concurrent: true
+external-controller: 127.0.0.1:9909
+secret: mihomo
+external-ui: ./Dashboard/zashboard
+external-ui-url: "https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip"
+
+profile:
+  store-selected: true
+  store-fake-ip: false
+
+sniffer:
+  enable: true
+  override-destination: false
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - rule-set:skip-sniff-domain
+  skip-dst-address:
+    - rule-set:geoip-telegram
+
+tun:
+  enable: true
+  mtu: 65535
+  stack: mixed
+  device: yagh779
+  dns-hijack:
+    - "any:53"
+    - "tcp://any:53"
+  auto-route: true
+  strict-route: true
+  auto-detect-interface: true
+  disable-icmp-forwarding: true
+  route-exclude-address:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - fc00::/7
+
+hosts:
+  doh.pub: [1.12.12.12, 120.53.53.53]
+  dns.alidns.com: [223.5.5.5, 223.6.6.6]
+  dns.google: [8.8.4.4, 8.8.8.8]
+  cloudflare-dns.com: [104.16.249.249, 104.16.248.249]
+
+dns:
+  enable: true
+  ipv6: true
+  enhanced-mode: fake-ip
+  fake-ip-ttl: 0
+  fake-ip-range: 28.0.0.1/8
+  fake-ip-range6: fc00::/16
+  fake-ip-filter:
+    - "*"
+    - "+.lan"
+    - "+.local"
+    - rule-set:fakeip-filter-domain,private
+    - rule-set:reject-domain,pcdn-cn,category-httpdns-cn,category-ads-all
+  default-nameserver:
+    - tcp://223.5.5.5
+    - tcp://119.29.29.29
+  proxy-server-nameserver:
+    - "https://doh.pub/dns-query#BaiduDirect"
+    - "https://dns.alidns.com/dns-query#BaiduDirect"
+  proxy-server-nameserver-policy:
+    "cloudnproxy.n.shifen.com":
+      - quic://dns.alidns.com
+      - https://doh.pub/dns-query
+  nameserver:
+    - "https://doh.pub/dns-query#BaiduDirect"
+    - "https://dns.alidns.com/dns-query#BaiduDirect"
+  direct-nameserver:
+    - quic://dns.alidns.com
+    - https://doh.pub/dns-query
+  nameserver-policy:
+    "rule-set:reject-domain,pcdn-cn,category-httpdns-cn,category-ads-all":
+      - rcode://success
+    "rule-set:private":
+      - system
+    "rule-set:category-speedtest@cn,direct-domain,stream-cn,googlefcm":
+      - quic://dns.alidns.com
+      - https://doh.pub/dns-query
+    "rule-set:github,google,telegram,proxy-domain,emby-domain,category-ai-!cn":
+      - "https://dns.google/dns-query#Telegram"
+      - "https://cloudflare-dns.com/dns-query#Telegram"
+    "rule-set:geolocation-!cn@cn":
+      - quic://dns.alidns.com
+      - https://doh.pub/dns-query
+    "rule-set:cn@!cn,geolocation-!cn":
+      - "https://dns.google/dns-query#Telegram"
+      - "https://cloudflare-dns.com/dns-query#Telegram"
+    "rule-set:cn":
+      - quic://dns.alidns.com
+      - https://doh.pub/dns-query
+
+listeners:
+  - name: download-in
+    type: mixed
+    port: 12306
+    listen: 127.0.0.1
+    udp: true
+
+  - name: mixed-in
+    type: mixed
+    port: 10086
+    listen: 127.0.0.1
+    udp: true
+
+proxies:
+  - name: BaiduDirect
+    type: http
+    server: cloudnproxy.n.shifen.com
+    port: 443
+    headers:
+      X-T5-Auth: 683556433
+      Host: 153.3.236.22:443
+
+  - name: Direct
+    type: direct
+    udp: true
+
+proxy-groups:
+  - name: Proxy
+    type: select
+    proxies: [Direct, Hong Kong, United States, Singapore, Japan]
+    default-selected: "Hong Kong"
+
+  - name: Domestic
+    type: select
+    proxies: [Direct, Hong Kong, United States, Singapore, Japan]
+    default-selected: Direct
+
+  - name: Telegram
+    type: select
+    include-all-providers: true
+    filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"
+
+  - name: Google&Github
+    type: select
+    proxies: [Hong Kong, United States, Singapore, Japan]
+    default-selected: "Hong Kong"
+
+  - name: Ai
+    type: select
+    proxies: [Hong Kong, United States, Singapore, Japan]
+    default-selected: "United States"
+
+  - name: Emby
+    type: select
+    include-all-providers: true
+    exclude-filter: "(?i)(日本|东京|樱花|美国|洛杉矶|🇯🇵|jp|japan|us|unitedstates|united states)"
+
+  - name: Update
+    type: select
+    proxies: [Direct, Hong Kong, United States, Singapore, Japan]
+    default-selected: Direct
+
+  - name: Download
+    type: select
+    proxies: [Direct]
+    include-all-providers: true
+    default-selected: Direct
+
+  - name: Hong Kong
+    type: select
+    include-all-providers: true
+    filter: "(?i)(🇭🇰|香港|hk|hongkong|hong kong)"
+
+  - name: United States
+    type: select
+    include-all-providers: true
+    filter: "(?i)(🇺🇸|美国|洛杉矶|us|unitedstates|united states)"
+
+  - name: Singapore
+    type: select
+    include-all-providers: true
+    filter: "(?i)(🇸🇬|新加坡|狮城|sg|singapore)"
+
+  - name: Japan
+    type: select
+    include-all-providers: true
+    filter: "(?i)(🇯🇵|日本|东京|樱花|jp|japan)"
+
+rules:
+  - RULE-SET,reject-domain,REJECT
+  - RULE-SET,pcdn-cn,REJECT
+  - RULE-SET,category-httpdns-cn,REJECT
+  - RULE-SET,category-ads-all,REJECT
+  - IN-NAME,download-in,Download
+  - DST-PORT,22,Domestic
+  - RULE-SET,private,Domestic
+  - RULE-SET,geoip-private,Domestic,no-resolve
+  - RULE-SET,direct-domain,Domestic
+  - RULE-SET,stream-cn,Domestic
+  - RULE-SET,googlefcm,Domestic
+  - RULE-SET,category-speedtest@cn,Domestic
+  - RULE-SET,proxy-domain,Proxy
+  - RULE-SET,emby-domain,Emby
+  - RULE-SET,google,Google&Github
+  - RULE-SET,github,Google&Github
+  - RULE-SET,category-ai-!cn,Ai
+  - RULE-SET,telegram,Telegram
+  - RULE-SET,geoip-telegram,Telegram,no-resolve
+  - RULE-SET,geolocation-!cn@cn,Domestic
+  - RULE-SET,cn@!cn,Proxy
+  - RULE-SET,geolocation-!cn,Proxy
+  - RULE-SET,cn,Domestic
+
+  - RULE-SET,geoip-google,Google&Github
+  - RULE-SET,geoip-cn,Domestic
+  - MATCH,Proxy
+
+rule-providers:
+  reject-domain:
+    <<: *domain_local
+    path: ./RuleProviders/reject-domain.list
+  direct-domain:
+    <<: *domain_local
+    path: ./RuleProviders/direct-domain.list
+  proxy-domain:
+    <<: *domain_local
+    path: ./RuleProviders/proxy-domain.list
+  emby-domain:
+    <<: *domain_local
+    path: ./RuleProviders/emby-domain.list
+  skip-sniff-domain:
+    <<: *domain_local
+    path: ./RuleProviders/skip-sniff-domain.list
+  fakeip-filter-domain:
+    <<: *domain_local
+    path: ./RuleProviders/fakeip-filter-domain.list
+
+  pcdn-cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/Yuu518/Yuu-rules/rule-set/mihomo/geosite/pcdn-cn.list"
+    path: ./RuleProviders/pcdn-cn.list
+  category-httpdns-cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/category-httpdns-cn.txt"
+    path: ./RuleProviders/category-httpdns-cn.list
+  category-ads-all:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/Yuu518/Yuu-rules/rule-set/mihomo/geosite/category-ads-all.list"
+    path: ./RuleProviders/category-ads-all.list
+  private:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/private.txt"
+    path: ./RuleProviders/private.list
+  googlefcm:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/googlefcm.txt"
+    path: ./RuleProviders/googlefcm.list
+  stream-cn:
+    <<: *domain_yaml
+    url: "https://ghfast.top/https://raw.githubusercontent.com/Sfssup/mihomo-set/main/rule_set/direct.yaml"
+    path: ./RuleProviders/stream-cn.yaml
+  category-speedtest@cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/category-speedtest@cn.txt"
+    path: ./RuleProviders/category-speedtest@cn.list
+  category-ai-!cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/category-ai-!cn.txt"
+    path: ./RuleProviders/category-ai-!cn.list
+  google:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/google.txt"
+    path: ./RuleProviders/google.list
+  github:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/github.txt"
+    path: ./RuleProviders/github.list
+  telegram:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/telegram.txt"
+    path: ./RuleProviders/telegram.list
+  geolocation-!cn@cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/geolocation-!cn@cn.txt"
+    path: ./RuleProviders/geolocation-!cn@cn.list
+  cn@!cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/cn@!cn.txt"
+    path: ./RuleProviders/cn@!cn.list
+  geolocation-!cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/geolocation-!cn.txt"
+    path: ./RuleProviders/geolocation-!cn.list
+  cn:
+    <<: *domain
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/sing-geosite/domain-set/cn.txt"
+    path: ./RuleProviders/cn.list
+
+  geoip-private:
+    <<: *ip
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/geoip/release/text/private.txt"
+    path: ./RuleProviders/geoip-private.list
+  geoip-google:
+    <<: *ip
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/geoip/release/text/google.txt"
+    path: ./RuleProviders/geoip-google.list
+  geoip-telegram:
+    <<: *ip
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/geoip/release/text/telegram.txt"
+    path: ./RuleProviders/geoip-telegram.list
+  geoip-cn:
+    <<: *ip
+    url: "https://ghfast.top/https://raw.githubusercontent.com/nekolsd/geoip/release/text/cn.txt"
+    path: ./RuleProviders/geoip-cn.list
