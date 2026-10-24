@@ -122,13 +122,13 @@
             "rule_set": [
               "pcdn-cn",
               "reject-domain",
-              "AWAvenue-Ads-Rule-Singbox"
+              "category-ads-all"
             ]
           }
         ],
         "action": "predefined",
         "answer": [
-          "*. 3600 IN A 203.0.113.1",
+          "*. 3600 IN A 198.18.0.244",
           "*. 3600 IN AAAA f2b0::1"
         ]
       },
@@ -159,7 +159,7 @@
     {
       "tag": "download_update",
       "headers": {
-        "User-Agent": "clash.meta/alpha-acbc92f"
+        "User-Agent": "clash.meta"
       },
       "detour": "Update"
     },
@@ -385,7 +385,7 @@
           },
           {
             "ip_cidr": [
-              "203.0.113.1/32",
+              "198.18.0.244/32",
               "f2b0::1/128"
             ]
           }
@@ -431,7 +431,7 @@
             "rule_set": [
               "pcdn-cn",
               "reject-domain",
-              "AWAvenue-Ads-Rule-Singbox"
+              "category-ads-all"
             ]
           }
         ],
@@ -528,18 +528,11 @@
           "telegram",
           "googlefcm",
           "category-ai-!cn",
-          "geolocation-!cn"
+          "geolocation-!cn",
+          "category-ads-all"
         ],
         "path": "./RuleProviders/{tag}.srs",
         "url": "https://github.cmliussss.net/https://raw.githubusercontent.com/Yuu518/sing-box-rules/rule_set/rule_set_site/{tag}.srs",
-        "http_client": "download_update",
-        "update_interval": "24h"
-      },
-      {
-        "type": "remote",
-        "tag": "AWAvenue-Ads-Rule-Singbox",
-        "path": "./RuleProviders/AWAvenue-Ads-Rule-Singbox.json",
-        "url": "https://github.cmliussss.net/https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Singbox.json",
         "http_client": "download_update",
         "update_interval": "24h"
       },
