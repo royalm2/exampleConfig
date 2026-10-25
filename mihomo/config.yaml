@@ -59,13 +59,12 @@ dns:
   enable: true
   fake-ip-ttl: 0
   enhanced-mode: fake-ip
-  fake-ip-range: 11.0.0.0/8
+  fake-ip-range: 11.0.0.1/8
   fake-ip-filter:
     - "*"
     - +.lan
     - +.local
     - rule-set:fakeip-filter-domain,private
-    - rule-set:reject-domain,pcdn-cn,AWAvenue-Ads-Rule-Clash
   proxy-server-nameserver:
     - https://doh.pub/dns-query#BaiduDirect
     - https://dns.alidns.com/dns-query#BaiduDirect
@@ -80,8 +79,6 @@ dns:
     - https://doh.pub/dns-query
     - https://dns.alidns.com/dns-query
   nameserver-policy:
-    rule-set:reject-domain,pcdn-cn,AWAvenue-Ads-Rule-Clash:
-      - rcode://success
     rule-set:private:
       - system
 
@@ -168,10 +165,15 @@ proxy-groups:
     filter: (?i)(🇯🇵|日本|东京|樱花|jp|japan)
     exclude-filter: (?i)(免流|用ai选择|支持ai)
 
+  - name: Ads
+    type: select
+    proxies: [REJECT, PASS]
+    default-selected: REJECT
+
 rules:
-  - RULE-SET,pcdn-cn,REJECT
-  - RULE-SET,reject-domain,REJECT
-  - RULE-SET,AWAvenue-Ads-Rule-Clash,REJECT
+  - RULE-SET,pcdn-cn,Ads
+  - RULE-SET,reject-domain,Ads
+  - RULE-SET,category-ads-all,Ads
   - IN-NAME,download-in,Download
   - DST-PORT,22,DIRECT
   - RULE-SET,private,Domestic
@@ -218,10 +220,10 @@ rule-providers:
     <<: *domain
     url: https://raw.githubusercontent.com/Yuu518/Yuu-rules/rule-set/mihomo/geosite/pcdn-cn.yaml
     path: ./RuleProviders/pcdn-cn.yaml
-  AWAvenue-Ads-Rule-Clash:
+  category-ads-all:
     <<: *domain
-    url: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Clash.yaml
-    path: ./RuleProviders/AWAvenue-Ads-Rule-Clash.yaml
+    url: https://raw.githubusercontent.com/Yuu518/Yuu-rules/rule-set/mihomo/geosite/category-ads-all.yaml
+    path: ./RuleProviders/category-ads-all.yaml
   private:
     <<: *domain
     url: https://raw.githubusercontent.com/Yuu518/Yuu-rules/rule-set/mihomo/geosite/private.yaml

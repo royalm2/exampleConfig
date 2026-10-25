@@ -66,8 +66,8 @@
       {
         "type": "fakeip",
         "tag": "fakedns",
-        "inet4_range": "11.0.0.0/8",
-        "inet6_range": "2001:2::/48"
+        "inet4_range": "11.0.0.1/8",
+        "inet6_range": "2001:2::1/48"
       },
       {
         "type": "local",
