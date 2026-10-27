@@ -442,10 +442,6 @@
         "outbound": "Download"
       },
       {
-        "port": 22,
-        "outbound": "Direct"
-      },
-      {
         "network": "icmp",
         "outbound": "Direct"
       },

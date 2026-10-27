@@ -1,7 +1,7 @@
 rule-anchor:
-  ip: &ip { type: http, proxy: Proxy, interval: 86400, behavior: ipcidr }
-  domain: &domain { type: http, proxy: Proxy, interval: 86400, behavior: domain }
-  domain_text: &domain_text { type: http, proxy: Proxy, interval: 86400, behavior: domain, format: text }
+  ip: &ip { type: http, interval: 86400, behavior: ipcidr }
+  domain: &domain { type: http, interval: 86400, behavior: domain }
+  domain_text: &domain_text { type: http, interval: 86400, behavior: domain, format: text }
   domain_local: &domain_local { type: file, behavior: domain }
   pp: &pp { type: http, proxy: Update, interval: 86400, health-check: { enable: true, url: https://cp.cloudflare.com/generate_204, interval: 86400 } }
 
@@ -174,7 +174,6 @@ rules:
   - RULE-SET,reject-domain,Ads
   - RULE-SET,category-ads-all,Ads
   - IN-NAME,download-in,Download
-  - DST-PORT,22,DIRECT
   - RULE-SET,private,Domestic
   - RULE-SET,googlefcm,Domestic
   - RULE-SET,direct-domain,Domestic
