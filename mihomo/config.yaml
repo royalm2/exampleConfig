@@ -13,6 +13,7 @@ proxy-providers:
     override:
       additional-prefix: bilibili/
       tfo: false
+      udp: true
 
 ipv6: false
 mixed-port: 10086
