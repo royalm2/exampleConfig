@@ -15,7 +15,6 @@ proxy-providers:
       tfo: false
       udp: true
 
-ipv6: false
 mixed-port: 10086
 unified-delay: true
 tcp-concurrent: true
@@ -44,12 +43,8 @@ tun:
   enable: true
   device: yagh779
   # auto-redirect: true
-  disable-icmp-forwarding: true
-  route-exclude-address:
-    - 10.0.0.0/8
-    - 172.16.0.0/12
-    - 192.168.0.0/16
-    - fc00::/7
+  inet6-address:
+    - 2001:2::1/126
 
 hosts:
   doh.pub: [1.12.12.12, 120.53.53.53]
@@ -57,9 +52,11 @@ hosts:
 
 dns:
   enable: true
+  ipv6: true
   fake-ip-ttl: 0
   enhanced-mode: fake-ip
   fake-ip-range: 11.0.0.1/8
+  fake-ip-range6: 2001:2::1/48
   fake-ip-filter:
     - "*"
     - +.lan
@@ -96,6 +93,12 @@ proxies:
     headers:
       X-T5-Auth: 683556433
       Host: 153.3.236.22:443
+
+  # - name: Tailscale
+  #   type: tailscale
+  #   hostname: mihomo
+  #   auth-key: tskey-auth-xxxx
+  #   udp: true
 
 proxy-groups:
   - name: Proxy
@@ -171,6 +174,9 @@ proxy-groups:
     default-selected: REJECT
 
 rules:
+  # - IPCIDR,100.64.0.0/10,Tailscale
+  # - IPCIDR6,fd7a115c:a1e0::/48,Tailscale
+  - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
   - RULE-SET,pcdn-cn,Ads
   - RULE-SET,reject-domain,Ads
   - RULE-SET,category-ads-all,Ads

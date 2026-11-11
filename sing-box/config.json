@@ -1,8 +1,7 @@
 {
   "log": {
-    "disabled": false,
     "level": "debug",
-    "output": "./src/log.txt",
+    // "output": "./src/log.txt",
     "timestamp": true
   },
   "dns": {
@@ -168,6 +167,14 @@
       "detour": "Proxy"
     }
   ],
+  // "endpoints": [
+  //   {
+  //     "type": "tailscale",
+  //     "tag": "Tailscale",
+  //     "hostname": "sing-box",
+  //     "auth_key": "tskey-auth-xxxx"
+  //   }
+  // ],
   "inbounds": [
     {
       "type": "mixed",
@@ -189,14 +196,8 @@
         "172.19.0.1/30",
         "fdfe:dcba:9876::1/126"
       ],
-      "auto_route": true,
-      // "auto_redirect": true,
-      "route_exclude_address": [
-        "10.0.0.0/8",
-        "172.16.0.0/12",
-        "192.168.0.0/16",
-        "fc00::/7"
-      ]
+      "auto_route": true
+      // "auto_redirect": true
     }
   ],
   "outbounds": [
@@ -392,6 +393,18 @@
         ],
         "action": "reject"
       },
+      // {
+      //   "preferred_by": "Tailscale",
+      //   "outbound": "Tailscale"
+      // },
+      {
+        "inbound": "download-in",
+        "outbound": "Download"
+      },
+      {
+        "network": "icmp",
+        "outbound": "Direct"
+      },
       {
         "rule_set": [
           "geoip-telegram",
@@ -436,14 +449,6 @@
           }
         ],
         "action": "reject"
-      },
-      {
-        "inbound": "download-in",
-        "outbound": "Download"
-      },
-      {
-        "network": "icmp",
-        "outbound": "Direct"
       },
       {
         "rule_set": [
@@ -588,7 +593,7 @@
   "services": [
     {
       "type": "api",
-      "tag": "sing-box dashboard",
+      "tag": "nativedashboard",
       "listen": "127.0.0.1",
       "listen_port": 9901,
       "secret": "singbox",
